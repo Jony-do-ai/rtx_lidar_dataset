@@ -1,0 +1,15 @@
+num_scenes: 2
+# 帧数设定：180度旋转 / 60帧 = 3度/帧
+frames_per_scene: 60
+output_dir: output/dataset
+seed_base: 123
+
+# 传感器配置
+sensor:
+  camera:
+    resolution: [1024, 1024]
+    position: [0.0, -2.5, 1.5]  # 相机位置 (y轴后退，z轴抬高)
+    look_at: [0.0, 0.0, 0.5]    #看向物体中心
+  lidar:
+    position: [0.0, 0.0, 2.0]   # 雷达位于正上方或侧上方
+    config: "Example_Rotary"    # 使用 Isaac Sim 内置的 Rotary 配置

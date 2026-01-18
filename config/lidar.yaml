@@ -1,0 +1,6 @@
+type: RTX
+horizontal_fov: 360
+vertical_fov: 40
+horizontal_resolution: 0.2
+vertical_resolution: 0.4
+max_range: 120
