@@ -1,6 +1,6 @@
-num_scenes: 2
+num_scenes: 1
 # 帧数设定：180度旋转 / 60帧 = 3度/帧
-frames_per_scene: 60
+frames_per_scene: 5
 output_dir: output/dataset
 seed_base: 123
 
