@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # 创建生成器
     generator = SequenceGenerator(
         config=cfg,
-        shape_library_dir=os.path.join(PROJECT_ROOT, "shapenet_models")
+        shape_library_dir=os.path.join(PROJECT_ROOT, "models/isaac_models/Isaac/Props/Mugs")
     )
 
     # 批量生成
