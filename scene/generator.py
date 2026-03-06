@@ -59,14 +59,17 @@ class SequenceGenerator:
     def set_light_shadows(self, enable: bool):
         """控制底层 USD 属性切换阴影"""
         stage = omni.usd.get_context().get_stage()
-        prim = stage.GetPrimAtPath(self.light_path)
-        if prim.IsValid():
-            # 针对不同版本的 Isaac Sim 尝试属性名
-            for attr_name in ["inputs:shadow:enable", "inputs:enableShadows"]:
-                attr = prim.GetAttribute(attr_name)
-                if attr:
-                    attr.Set(bool(enable))
-                    return True
+        for prim in stage.Traverse():
+            if prim.IsA(UsdLux.DistantLight):
+                # 针对不同版本的 Isaac Sim 尝试属性名
+                for attr_name in ["inputs:shadow:enable", "inputs:enableShadows"]:
+                    attr = prim.GetAttribute(attr_name)
+                    if attr:
+                        attr.Set(bool(enable))
+                        # 强制更新应用程序状态，确保渲染器能够及时捕获到属性的改变
+                        omni.kit.app.get_app().update()
+                        return True
+        print("[Warning] Could not find DistantLight to toggle shadows!")
         return False
 
     def generate_sequences(self):
