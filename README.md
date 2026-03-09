@@ -1,1 +1,2 @@
 Isaac sim 的python环境安装库："D:\isaac-sim\python.bat" -m pip install open3d numpy
+安装hugging face的安装工具
