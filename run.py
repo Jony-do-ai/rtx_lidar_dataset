@@ -47,6 +47,8 @@ if __name__ == "__main__":
     generator = SequenceGenerator(
         config=cfg,
         shape_library_dir=os.path.join(PROJECT_ROOT, "models/shapenet_subset/02773838/02773838/")
+        # shape_library_dir=os.path.join(PROJECT_ROOT, "models/shapenet_subset/03261776/03261776/")
+        #shape_library_dir = os.path.join(PROJECT_ROOT, "models/isaac_models/Isaac/Props/Shapes/")
     )
 
     # 批量生成
