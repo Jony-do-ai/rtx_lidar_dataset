@@ -119,8 +119,14 @@ def extract_synced_gt_pointcloud_from_stage(
         mesh_count += 1
 
     if mesh_count == 0 or len(merged_mesh.vertices) == 0 or len(merged_mesh.triangles) == 0:
-        raise RuntimeError(f"No valid mesh geometry found under prim: {prim_path}")
+        print(f"No valid mesh geometry found under prim: {prim_path}")
+        return False
 
+    # 全局清洗与优化 (仅执行一次，提升效率)
+    merged_mesh.remove_duplicated_vertices()
+    merged_mesh.remove_degenerate_triangles()
+    merged_mesh.remove_duplicated_triangles()
+    merged_mesh.remove_unreferenced_vertices()
     merged_mesh.compute_vertex_normals()
 
     # 表面均匀采样：比直接取 mesh 顶点更适合做 GT
@@ -145,6 +151,7 @@ def extract_synced_gt_pointcloud_from_stage(
         f"meshes={mesh_count}, points={len(np.asarray(pcd.points))}, "
         f"normalized={normalize_to_unit}"
     )
+    return True
 
 class SequenceGenerator:
     def __init__(self, config, shape_library_dir):
@@ -305,15 +312,8 @@ class SequenceGenerator:
                 z_min = mesh.get_min_bound()[2]
                 z_offset = -float(z_min)  # 这就是完美贴合地面所需的绝对抬升量！
 
-                # 5. 执行抬升并保存完美对齐的 GT 点云
-                mesh.translate((0, 0, z_offset))
-                pcd = mesh.sample_points_uniformly(number_of_points=5000)
-
-                gt_filename = f"{model_name}_gt.ply"
-                o3d.io.write_point_cloud(os.path.join(geom_dir, gt_filename), pcd, write_ascii=True)
-
             except Exception as e:
-                print(f"[ERROR] Open3D 处理与真值生成失败: {e}")
+                print(f"[ERROR] Open3D 贴地偏移计算失败: {e}")
 
             # --- 4. 回到 Isaac Sim，计算它内部引擎需要的缩放比例 ---
             from pxr import UsdGeom, Usd
@@ -341,7 +341,7 @@ class SequenceGenerator:
                 rep.modify.pose(
                     position=(0, 0, float(z_offset)),  # 直接使用纯数学推导出的终极偏移量！
                     rotation=(90, 0, 0),
-                    scale=float(rescale_factor)
+                    scale=(float(rescale_factor), float(rescale_factor), float(rescale_factor))
                 )
                 rep.modify.semantics([('class', 'target_object')])
 
@@ -349,8 +349,6 @@ class SequenceGenerator:
             for _ in range(5):
                 self.world.step(render=True)
                 rep.orchestrator.step()
-
-            self.world.reset()
 
             # ----------------------------------------
             # 在物体最终 pose 生效后，导出唯一正确的 GT 点云
@@ -362,12 +360,15 @@ class SequenceGenerator:
                 omni.kit.app.get_app().update()
                 self.world.step(render=True)
 
-            extract_synced_gt_pointcloud_from_stage(
+            ok = extract_synced_gt_pointcloud_from_stage(
                 prim_path=self.last_rep_prim_path,
                 out_ply_path=gt_path,
                 num_points=5000,
                 normalize_to_unit=False,  # 先保持世界坐标；训练时再统一归一化
             )
+            if not ok:
+                print(f"[WARN] Failed to export GT for {seq_name}, skip this sequence.")
+                continue
 
             # ==========================================
             # 2. 生成带阴影的序列帧 (永远保持阴影开启即可)
